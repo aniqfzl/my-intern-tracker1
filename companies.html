@@ -1,77 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InternPath | Applications</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="db.js"></script>
 </head>
 <body>
     <main>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2>My Applications</h2>
-            <button class="btn btn-primary" onclick="toggleForm()">+ Add New</button>
+        <div class="header-area">
+            <div>
+                <h1>Application Manager</h1>
+                <p style="color: var(--text-muted)">Track and update your internship journey.</p>
+            </div>
+            <button class="btn btn-primary" onclick="toggleForm()">
+                <i class="fas fa-plus"></i> Add New Application
+            </button>
         </div>
 
-        <div id="addForm" class="card" style="display:none; margin-bottom:20px;">
-            <h3>Add New Internship</h3>
-            <input type="text" id="newCompany" placeholder="Company Name">
-            <input type="text" id="newDate" placeholder="Date (e.g. 13/01/2026)">
-            <select id="newStatus">
-                <option value="Applied">Applied</option>
-                <option value="Interviewing">Interviewing</option>
-                <option value="Rejected">Rejected</option>
-            </select>
-            <button class="btn btn-primary" onclick="saveData()">Save</button>
+        <div id="formContainer" class="card" style="display:none; margin-bottom: 2.5rem; border-left: 5px solid var(--primary);">
+            <h3 id="formTitle" style="margin-bottom: 1.5rem;">Add New Internship</h3>
+            <input type="hidden" id="editId"> <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <label>Company Name</label>
+                    <input type="text" id="newCompany" placeholder="e.g. Google">
+                </div>
+                <div>
+                    <label>Date Applied</label>
+                    <input type="date" id="newDate">
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select id="newStatus">
+                        <option value="applied">Applied</option>
+                        <option value="interviewing">Interviewing</option>
+                        <option value="offered">Offered</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Application Link</label>
+                    <input type="url" id="newLink" placeholder="https://...">
+                </div>
+            </div>
+            <label>Notes</label>
+            <textarea id="newNotes" rows="3" placeholder="Additional details (e.g. Referral name, specific role)..."></textarea>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-primary" onclick="saveData()">Save Application</button>
+                <button class="btn btn-outline" onclick="toggleForm()">Cancel</button>
+            </div>
         </div>
 
         <div class="card">
-            <table>
-                <thead><tr><th>Company</th><th>Date</th><th>Status</th></tr></thead>
-                <tbody id="list"></tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </main>
+
     <script src="navbar.js"></script>
     <script>
         function toggleForm() {
-            const f = document.getElementById('addForm');
-            f.style.display = f.style.display === 'none' ? 'block' : 'none';
+            const f = document.getElementById('formContainer');
+            const isHidden = f.style.display === 'none';
+            f.style.display = isHidden ? 'block' : 'none';
+            
+            if (isHidden) {
+                // Clear form for fresh entry
+                document.getElementById('formTitle').innerText = "Add New Internship";
+                document.getElementById('editId').value = "";
+                document.getElementById('newCompany').value = "";
+                document.getElementById('newDate').value = "";
+                document.getElementById('newStatus').value = "applied";
+                document.getElementById('newLink').value = "";
+                document.getElementById('newNotes').value = "";
+            }
         }
 
         async function saveData() {
             const { data: { user } } = await supabaseClient.auth.getUser();
+            const id = document.getElementById('editId').value;
+            
             const payload = {
                 COMPANY: document.getElementById('newCompany').value,
                 "DATE APPLY": document.getElementById('newDate').value,
                 STATUS: document.getElementById('newStatus').value,
+                link: document.getElementById('newLink').value,
+                Notes: document.getElementById('newNotes').value,
                 user_id: user.id
             };
-            const { error } = await supabaseClient.from('internships').insert([payload]);
+
+            let error;
+            if (id) {
+                // UPDATE existing record
+                const result = await supabaseClient.from('internships').update(payload).eq('id', id);
+                error = result.error;
+            } else {
+                // INSERT new record
+                const result = await supabaseClient.from('internships').insert([payload]);
+                error = result.error;
+            }
+
             if (error) alert(error.message);
             else location.reload();
         }
 
-        async function load() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-
-    if (user) {
-        const { data, error } = await supabaseClient
-            .from('internships')
-            .select('*')
-            .eq('user_id', user.id); // Only get your data
-
-        if (data) {
-            document.getElementById('list').innerHTML = data.map(app => `
-                <tr>
-                    <td>${app.COMPANY}</td>
-                    <td>${app['DATE APPLY']}</td>
-                    <td><span class="badge status-${(app.STATUS || 'applied').toLowerCase()}">${app.STATUS}</span></td>
-                </tr>`).join('');
+        async function editMode(id) {
+            const { data } = await supabaseClient.from('internships').select('*').eq('id', id).single();
+            if (data) {
+                toggleForm();
+                document.getElementById('formTitle').innerText = "Edit Application";
+                document.getElementById('editId').value = data.id;
+                document.getElementById('newCompany').value = data.COMPANY;
+                document.getElementById('newDate').value = data['DATE APPLY'];
+                document.getElementById('newStatus').value = data.STATUS.toLowerCase();
+                document.getElementById('newLink').value = data.link || "";
+                document.getElementById('newNotes').value = data.Notes || "";
+            }
         }
-    }
-}
+
+        async function load() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                const { data, error } = await supabaseClient
+                    .from('internships')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('DATE APPLY', { ascending: false });
+
+                if (data) {
+                    document.getElementById('list').innerHTML = data.map(app => `
+                        <tr>
+                            <td>
+                                <strong>${app.COMPANY}</strong><br>
+                                <small><a href="${app.link || '#'}" target="_blank" style="color:var(--primary)">${app.link ? 'View Link' : ''}</a></small>
+                            </td>
+                            <td>${app['DATE APPLY']}</td>
+                            <td><span class="badge status-${(app.STATUS || 'applied').toLowerCase()}">${app.STATUS}</span></td>
+                            <td style="color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                ${app.Notes || '-'}
+                            </td>
+                            <td>
+                                <button class="btn btn-outline" style="padding: 5px 10px;" onclick="editMode('${app.id}')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                            </td>
+                        </tr>`).join('');
+                }
+            }
+        }
         load();
     </script>
 </body>
-
 </html>
