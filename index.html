@@ -16,10 +16,30 @@
     <script src="navbar.js"></script>
     <script>
         async function load() {
-            const { data } = await supabaseClient.from('internships').select('*');
-            if(data) document.getElementById('totalCount').innerText = data.length;
+    // 1. Get the current logged-in user
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (user) {
+        // 2. Only fetch internships belonging to THIS user
+        const { data, error } = await supabaseClient
+            .from('internships')
+            .select('*')
+            .eq('user_id', user.id);
+
+        if (data) {
+            document.getElementById('totalCount').innerText = data.length;
+            
+            // Optional: Count specific statuses if you have those IDs in your HTML
+            const appliedCount = data.filter(i => i.STATUS === 'applied').length;
+            if(document.getElementById('appliedCount')) {
+                document.getElementById('appliedCount').innerText = appliedCount;
+            }
         }
+    }
+}
+load();
         load();
     </script>
 </body>
+
 </html>
