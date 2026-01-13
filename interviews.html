@@ -2,29 +2,139 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InternPath | Interviews</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="db.js"></script>
 </head>
 <body>
     <main>
         <div class="header-area">
-            <h2>Interview Schedule</h2>
-        </div>
-        
-        <div class="card" style="border-left: 5px solid var(--primary); display: flex; align-items: center; gap: 20px;">
-            <div style="background: #eff6ff; padding: 15px; border-radius: 12px; text-align: center; min-width: 80px;">
-                <span style="display:block; font-weight: 800; font-size: 1.2rem;">24</span>
-                <span style="font-size: 0.8rem; color: var(--primary); font-weight: 700;">JAN</span>
-            </div>
             <div>
-                <h4 style="margin-bottom: 4px;">Technical Interview: Tng Digital</h4>
-                <p style="color: var(--text-muted); font-size: 0.9rem;"><i class="fas fa-clock"></i> 10:00 AM — Google Meet</p>
+                <h1>Interview Schedule</h1>
+                <p style="color: var(--text-muted)">Manage your upcoming meetings and technical rounds.</p>
             </div>
+        </div>
+
+        <div id="editInterviewForm" class="card" style="display:none; margin-bottom: 2rem; border-left: 5px solid var(--warning);">
+            <h3 id="editTitle">Update Interview Details</h3>
+            <input type="hidden" id="editId">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                <div>
+                    <label>Interview Date</label>
+                    <input type="date" id="intDate">
+                </div>
+                <div>
+                    <label>Interview Time</label>
+                    <input type="time" id="intTime">
+                </div>
+                <div>
+                    <label>Venue / Link</label>
+                    <input type="text" id="intVenue" placeholder="e.g. Google Meet, Zoom, or Office Address">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="saveInterview()">Update Schedule</button>
+                <button class="btn btn-outline" onclick="closeForm()">Cancel</button>
+            </div>
+        </div>
+
+        <div id="interviewList">
+            </div>
+
+        <div id="emptyState" style="display:none; text-align: center; padding: 3rem;">
+            <i class="fas fa-calendar-check" style="font-size: 3rem; color: var(--border); margin-bottom: 1rem;"></i>
+            <p style="color: var(--text-muted)">No interviews scheduled yet. Keep applying!</p>
         </div>
     </main>
+
     <script src="navbar.js"></script>
+    <script>
+        async function loadInterviews() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            // Fetch only companies with status 'interviewing'
+            const { data, error } = await supabaseClient
+                .from('internships')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('STATUS', 'interviewing');
+
+            const container = document.getElementById('interviewList');
+            const empty = document.getElementById('emptyState');
+
+            if (!data || data.length === 0) {
+                container.innerHTML = "";
+                empty.style.display = "block";
+                return;
+            }
+
+            empty.style.display = "none";
+            container.innerHTML = data.map(item => {
+                // Formatting the date nicely (e.g., 24 JAN)
+                let day = "??";
+                let month = "TBD";
+                if (item.interview_date) {
+                    const d = new Date(item.interview_date);
+                    day = d.getDate();
+                    month = d.toLocaleString('default', { month: 'short' }).toUpperCase();
+                }
+
+                return `
+                <div class="card" style="border-left: 5px solid var(--primary); display: flex; align-items: center; gap: 20px; margin-bottom: 15px;">
+                    <div style="background: #eff6ff; padding: 15px; border-radius: 12px; text-align: center; min-width: 85px;">
+                        <span style="display:block; font-weight: 800; font-size: 1.2rem;">${day}</span>
+                        <span style="font-size: 0.8rem; color: var(--primary); font-weight: 700;">${month}</span>
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <h4 style="margin-bottom: 4px;">${item.COMPANY}</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-clock"></i> ${item.interview_time || 'Time not set'} — 
+                            <i class="fas fa-location-dot"></i> ${item.venue || 'Venue not set'}
+                        </p>
+                    </div>
+                    <button class="btn btn-outline" onclick="openEdit('${item.id}', '${item.COMPANY}')">
+                        <i class="fas fa-pen"></i> Update
+                    </button>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function openEdit(id, company) {
+            document.getElementById('editInterviewForm').style.display = 'block';
+            document.getElementById('editId').value = id;
+            document.getElementById('editTitle').innerText = `Update Interview: ${company}`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeForm() {
+            document.getElementById('editInterviewForm').style.display = 'none';
+        }
+
+        async function saveInterview() {
+            const id = document.getElementById('editId').value;
+            const payload = {
+                interview_date: document.getElementById('intDate').value,
+                interview_time: document.getElementById('intTime').value,
+                venue: document.getElementById('intVenue').value
+            };
+
+            const { error } = await supabaseClient
+                .from('internships')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) alert(error.message);
+            else {
+                closeForm();
+                loadInterviews();
+            }
+        }
+
+        loadInterviews();
+    </script>
 </body>
 </html>
