@@ -52,15 +52,26 @@
         }
 
         async function load() {
-            const { data } = await supabaseClient.from('internships').select('*');
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (user) {
+        const { data, error } = await supabaseClient
+            .from('internships')
+            .select('*')
+            .eq('user_id', user.id); // Only get your data
+
+        if (data) {
             document.getElementById('list').innerHTML = data.map(app => `
                 <tr>
                     <td>${app.COMPANY}</td>
                     <td>${app['DATE APPLY']}</td>
-                    <td><span class="badge status-${app.STATUS.toLowerCase()}">${app.STATUS}</span></td>
+                    <td><span class="badge status-${(app.STATUS || 'applied').toLowerCase()}">${app.STATUS}</span></td>
                 </tr>`).join('');
         }
+    }
+}
         load();
     </script>
 </body>
+
 </html>
