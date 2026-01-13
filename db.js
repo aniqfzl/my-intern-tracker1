@@ -1,6 +1,12 @@
 const SUPABASE_URL = 'https://bukpaaycgtstljhhymwo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_bBj2x2EInx3WCwqJLR-j1Q_UgIukgvF';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 // Check if user is logged in
 async function checkUser() {
@@ -18,5 +24,6 @@ async function logout() {
     await supabaseClient.auth.signOut();
     window.location.href = 'login.html';
 }
+
 
 checkUser();
