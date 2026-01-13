@@ -1,45 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InternPath | Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="db.js"></script>
 </head>
 <body>
     <main>
-        <h1>Dashboard</h1>
-        <div class="card">
-            <h2 id="totalCount">0</h2>
-            <p>Total Applications</p>
+        <div class="header-area">
+            <h1>Dashboard Overview</h1>
+            <p style="color: var(--text-muted); margin-top: 5px;">Welcome back! Here is your application progress.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Applications</h3>
+                <div class="val" id="totalCount">0</div>
+            </div>
+            
+            <div class="stat-card" style="border-top: 4px solid var(--info)">
+                <h3>Applied</h3>
+                <div class="val" id="appliedCount">0</div>
+            </div>
+
+            <div class="stat-card" style="border-top: 4px solid var(--warning)">
+                <h3>Interviewing</h3>
+                <div class="val" id="intCount">0</div>
+            </div>
+
+            <div class="stat-card" style="border-top: 4px solid var(--primary)">
+                <h3>Offered</h3>
+                <div class="val" id="offeredCount">0</div>
+            </div>
+
+            <div class="stat-card" style="border-top: 4px solid var(--success)">
+                <h3>Accepted</h3>
+                <div class="val" id="acceptedCount">0</div>
+            </div>
+
+            <div class="stat-card" style="border-top: 4px solid var(--danger)">
+                <h3>Rejected</h3>
+                <div class="val" id="rejectedCount">0</div>
+            </div>
+        </div>
+
+        <div class="card" style="display: flex; align-items: center; gap: 20px; background: linear-gradient(to right, #ffffff, #f1f5f9);">
+            <div style="font-size: 2.5rem; color: var(--primary);">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 5px;">Keep going!</h4>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Consistent applications lead to more interview opportunities. Check your status updates regularly.</p>
+            </div>
         </div>
     </main>
+
     <script src="navbar.js"></script>
     <script>
         async function load() {
-    // 1. Get the current logged-in user
-    const { data: { user } } = await supabaseClient.auth.getUser();
+            // 1. Get the current logged-in user
+            const { data: { user } } = await supabaseClient.auth.getUser();
 
-    if (user) {
-        // 2. Only fetch internships belonging to THIS user
-        const { data, error } = await supabaseClient
-            .from('internships')
-            .select('*')
-            .eq('user_id', user.id);
+            if (user) {
+                // 2. Fetch internships belonging to THIS user
+                const { data, error } = await supabaseClient
+                    .from('internships')
+                    .select('*')
+                    .eq('user_id', user.id);
 
-        if (data) {
-            document.getElementById('totalCount').innerText = data.length;
-            
-            // Optional: Count specific statuses if you have those IDs in your HTML
-            const appliedCount = data.filter(i => i.STATUS === 'applied').length;
-            if(document.getElementById('appliedCount')) {
-                document.getElementById('appliedCount').innerText = appliedCount;
+                if (error) {
+                    console.error("Error fetching data:", error);
+                    return;
+                }
+
+                if (data) {
+                    // Update the HTML numbers
+                    document.getElementById('totalCount').innerText = data.length;
+                    
+                    // Logic to count each status (case-insensitive for safety)
+                    document.getElementById('appliedCount').innerText = 
+                        data.filter(i => i.STATUS && i.STATUS.toLowerCase() === 'applied').length;
+                    
+                    document.getElementById('intCount').innerText = 
+                        data.filter(i => i.STATUS && i.STATUS.toLowerCase() === 'interviewing').length;
+                    
+                    document.getElementById('offeredCount').innerText = 
+                        data.filter(i => i.STATUS && i.STATUS.toLowerCase() === 'offered').length;
+                    
+                    document.getElementById('acceptedCount').innerText = 
+                        data.filter(i => i.STATUS && i.STATUS.toLowerCase() === 'accepted').length;
+                    
+                    document.getElementById('rejectedCount').innerText = 
+                        data.filter(i => i.STATUS && i.STATUS.toLowerCase() === 'rejected').length;
+                }
             }
         }
-    }
-}
-load();
+        
         load();
     </script>
 </body>
-
 </html>
