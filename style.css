@@ -2,19 +2,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-    primary: #4f46e5;
-    primary-hover: #4338ca;
-    bg-main: #f8fafc;
-    sidebar-bg: #1e293b;
-    text-main: #1e293b;
-    text-muted: #64748b;
-    white: #ffffff;
-    border: #e2e8f0;
-    success: #22c55e;
-    danger: #ef4444;
-    warning: #f59e0b;
-    info: #3b82f6;
-    shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --bg-main: #f8fafc;
+    --sidebar-bg: #1e293b;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --white: #ffffff;
+    --border: #e2e8f0;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 * { 
