@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+</head>
+<body>
+    <main>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2>My Applications</h2>
+            <button class="btn btn-primary" onclick="toggleForm()">+ Add New</button>
+        </div>
+
+        <div id="addForm" class="card" style="display:none; margin-bottom:20px;">
+            <h3>Add New Internship</h3>
+            <input type="text" id="newCompany" placeholder="Company Name">
+            <input type="text" id="newDate" placeholder="Date (e.g. 13/01/2026)">
+            <select id="newStatus">
+                <option value="Applied">Applied</option>
+                <option value="Interviewing">Interviewing</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+            <button class="btn btn-primary" onclick="saveData()">Save</button>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead><tr><th>Company</th><th>Date</th><th>Status</th></tr></thead>
+                <tbody id="list"></tbody>
+            </table>
+        </div>
+    </main>
+    <script src="navbar.js"></script>
+    <script>
+        function toggleForm() {
+            const f = document.getElementById('addForm');
+            f.style.display = f.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function saveData() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            const payload = {
+                COMPANY: document.getElementById('newCompany').value,
+                "DATE APPLY": document.getElementById('newDate').value,
+                STATUS: document.getElementById('newStatus').value,
+                user_id: user.id
+            };
+            const { error } = await supabaseClient.from('internships').insert([payload]);
+            if (error) alert(error.message);
+            else location.reload();
+        }
+
+        async function load() {
+            const { data } = await supabaseClient.from('internships').select('*');
+            document.getElementById('list').innerHTML = data.map(app => `
+                <tr>
+                    <td>${app.COMPANY}</td>
+                    <td>${app['DATE APPLY']}</td>
+                    <td><span class="badge status-${app.STATUS.toLowerCase()}">${app.STATUS}</span></td>
+                </tr>`).join('');
+        }
+        load();
+    </script>
+</body>
+</html>

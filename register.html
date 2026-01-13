@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>InternPath | Register</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+    <style>body { justify-content: center; align-items: center; display: flex; height: 100vh; }</style>
+</head>
+<body>
+    <div class="card" style="width: 100%; max-width: 400px;">
+        <h2 style="text-align:center; margin-bottom:1.5rem;">Create Account</h2>
+        <form id="regForm">
+            <label>Email</label>
+            <input type="email" id="email" required placeholder="your@email.com">
+            <label>Password</label>
+            <input type="password" id="password" required placeholder="Min 6 characters">
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Register</button>
+        </form>
+        <p style="margin-top:15px; text-align:center;">Already have an account? <a href="login.html">Login</a></p>
+        <p id="msg" style="color:red; text-align:center; margin-top:10px;"></p>
+    </div>
+    <script>
+        document.getElementById('regForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) { document.getElementById('msg').innerText = error.message; } 
+            else { alert("Registration successful! You can now login."); window.location.href = "login.html"; }
+        });
+    </script>
+</body>
+</html>

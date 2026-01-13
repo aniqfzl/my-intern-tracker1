@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+</head>
+<body>
+    <main>
+        <h1>Dashboard</h1>
+        <div class="card">
+            <h2 id="totalCount">0</h2>
+            <p>Total Applications</p>
+        </div>
+    </main>
+    <script src="navbar.js"></script>
+    <script>
+        async function load() {
+            const { data } = await supabaseClient.from('internships').select('*');
+            if(data) document.getElementById('totalCount').innerText = data.length;
+        }
+        load();
+    </script>
+</body>
+</html>
