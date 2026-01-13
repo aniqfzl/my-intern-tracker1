@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InternPath | My Profile</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -11,32 +12,112 @@
 <body>
     <main>
         <div class="header-area">
-            <h2>Profile Settings</h2>
+            <h1>Profile Settings</h1>
+            <p style="color: var(--text-muted)">Manage your personal information and account security.</p>
         </div>
 
         <div class="card" style="max-width: 600px; margin: 0 auto;">
             <div style="text-align: center; margin-bottom: 2rem;">
-                <div style="width: 100px; height: 100px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; font-weight: bold; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);">
-                    A
+                <div id="userInitial" style="width: 80px; height: 80px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold; box-shadow: var(--shadow);">
+                    ?
                 </div>
-                <h3>Applicant User</h3>
-                <p style="color: var(--text-muted)">Final Year Student</p>
+                <h3 id="displayFullName">Loading...</h3>
+                <p id="displayEmail" style="color: var(--text-muted); font-size: 0.9rem;"></p>
             </div>
 
             <div style="display: grid; gap: 5px;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Full Name</label>
-                <input type="text" value="Applicant User">
+                <label>Full Name</label>
+                <input type="text" id="profName" placeholder="Enter your full name">
                 
-                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Email Address</label>
-                <input type="email" value="user@example.com">
+                <label>Email Address (Account ID)</label>
+                <input type="email" id="profEmail" disabled style="background: #f1f5f9; cursor: not-allowed;">
 
-                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">University</label>
-                <input type="text" value="University of Technology">
+                <label>University / Institution</label>
+                <input type="text" id="profUni" placeholder="e.g. University of Technology">
+                
+                <button class="btn btn-primary" onclick="updateProfile()" style="width: 100%; margin-bottom: 2rem;">
+                    <i class="fas fa-save"></i> Save Profile Changes
+                </button>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 1.5rem;">
+
+                <h4 style="margin-bottom: 1rem;">Security</h4>
+                <label>New Password</label>
+                <input type="password" id="newPassword" placeholder="Minimum 6 characters">
+                
+                <button class="btn btn-outline" onclick="updatePassword()" style="width: 100%; color: var(--danger); border-color: #fecaca;">
+                    <i class="fas fa-key"></i> Update Password
+                </button>
             </div>
-
-            <button class="btn btn-primary" style="width: 100%; margin-top: 10px;">Save Profile Changes</button>
         </div>
     </main>
+
     <script src="navbar.js"></script>
+    <script>
+        // Load User Data on Startup
+        async function loadProfile() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+
+            if (user) {
+                const metadata = user.user_metadata;
+                const email = user.email;
+                const fullName = metadata.full_name || "Applicant User";
+                const university = metadata.university || "";
+
+                // Fill inputs
+                document.getElementById('profEmail').value = email;
+                document.getElementById('profName').value = fullName;
+                document.getElementById('profUni').value = university;
+
+                // Update Visuals
+                document.getElementById('displayEmail').innerText = email;
+                document.getElementById('displayFullName').innerText = fullName;
+                document.getElementById('userInitial').innerText = fullName.charAt(0).toUpperCase();
+            }
+        }
+
+        // Save metadata changes
+        async function updateProfile() {
+            const name = document.getElementById('profName').value;
+            const uni = document.getElementById('profUni').value;
+
+            const { data, error } = await supabaseClient.auth.updateUser({
+                data: { 
+                    full_name: name,
+                    university: uni
+                }
+            });
+
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                alert("Profile updated successfully!");
+                loadProfile(); // Refresh visuals
+            }
+        }
+
+        // Change Password logic
+        async function updatePassword() {
+            const newPass = document.getElementById('newPassword').value;
+            
+            if (newPass.length < 6) {
+                alert("Password must be at least 6 characters.");
+                return;
+            }
+
+            const { error } = await supabaseClient.auth.updateUser({
+                password: newPass
+            });
+
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                alert("Password changed successfully!");
+                document.getElementById('newPassword').value = "";
+            }
+        }
+
+        loadProfile();
+    </script>
 </body>
 </html>
